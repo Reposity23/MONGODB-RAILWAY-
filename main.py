@@ -7,7 +7,9 @@ import requests
 # --- Hardcoded Configuration ---
 BOT_TOKEN = "8502823873:AAEQpMyKFuZ4lYdNn7rmaBACh2d8-dPEXI4"
 CHAT_ID = "6642388335"
-MONGO_URI = "YOUR_RAILWAY_MONGO_URI"  # Replace with your Railway MongoDB URI
+
+# Railway MongoDB URL
+MONGO_URI = "mongodb://mongo:RUyOPVmxOKQMeTIOSNtdYVAjrYrZaVWP@mainline.proxy.rlwy.net:35306"
 
 client = MongoClient(MONGO_URI)
 db = client.analytics
@@ -18,7 +20,7 @@ app = FastAPI()
 # --- CORS Setup ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can replace * with your frontend domain
+    allow_origins=["*"],  # or replace "*" with your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
