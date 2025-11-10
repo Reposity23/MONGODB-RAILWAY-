@@ -1,12 +1,15 @@
+import asyncio
+import random
+import requests
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from datetime import datetime
-import requests
 
 # --- Hardcoded Configuration ---
 BOT_TOKEN = "8502823873:AAEQpMyKFuZ4lYdNn7rmaBACh2d8-dPEXI4"
 CHAT_ID = "6642388335"
+SELF_URL = "https://your-render-url.onrender.com/visit"  # Replace with your Render URL
 
 # Railway MongoDB URL
 MONGO_URI = "mongodb://mongo:RUyOPVmxOKQMeTIOSNtdYVAjrYrZaVWP@mainline.proxy.rlwy.net:35306"
@@ -20,7 +23,7 @@ app = FastAPI()
 # --- CORS Setup ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or replace "*" with your frontend domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,7 +39,6 @@ def send_telegram(message: str):
         print("Telegram error:", e)
 
 def get_unique_count(page: str, user_agent: str):
-    """Insert visit if unique today and return total unique count."""
     today = datetime.utcnow().date()
     exists = visits.find_one({
         "page": page,
@@ -50,8 +52,7 @@ def get_unique_count(page: str, user_agent: str):
             "date": today.isoformat(),
             "timestamp": datetime.utcnow()
         })
-    total = visits.count_documents({"page": page, "date": today.isoformat()})
-    return total
+    return visits.count_documents({"page": page, "date": today.isoformat()})
 
 # --- API Endpoint ---
 @app.post("/visit")
@@ -62,7 +63,6 @@ async def record_visit(request: Request):
 
     total_unique = get_unique_count(page, user_agent)
 
-    # Send Telegram message
     time_now = datetime.now().strftime("%I:%M:%S %p")
     date_now = datetime.now().strftime("%m/%d/%Y")
     message = f"""
@@ -74,3 +74,19 @@ TOTAL VISITORS (UNIQUE): {total_unique}
 """
     send_telegram(message.strip())
     return {"status": "ok", "total_unique": total_unique}
+
+# --- Background Task to Keep Service Alive ---
+async def self_ping():
+    await asyncio.sleep(10)  # wait a bit after startup
+    while True:
+        try:
+            fake_page = f"keep_alive_{random.randint(1,1000)}"
+            requests.post(SELF_URL, json={"page": fake_page, "userAgent": "ping_task"})
+            print(f"Sent keep-alive ping: {fake_page}")
+        except Exception as e:
+            print("Keep-alive ping failed:", e)
+        await asyncio.sleep(random.randint(240, 360))  # wait 4-6 minutes
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(self_ping())
