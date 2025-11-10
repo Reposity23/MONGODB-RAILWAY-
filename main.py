@@ -1,5 +1,4 @@
 import asyncio
-import random
 import requests
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -80,12 +79,12 @@ async def self_ping():
     await asyncio.sleep(10)  # wait a bit after startup
     while True:
         try:
-            fake_page = f"keep_alive_{random.randint(1,1000)}"
+            fake_page = f"keep_alive"
             requests.post(SELF_URL, json={"page": fake_page, "userAgent": "ping_task"})
             print(f"Sent keep-alive ping: {fake_page}")
         except Exception as e:
             print("Keep-alive ping failed:", e)
-        await asyncio.sleep(random.randint(240, 360))  # wait 4-6 minutes
+        await asyncio.sleep(60)  # 1 minute interval
 
 @app.on_event("startup")
 async def startup_event():
